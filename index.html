@@ -15,7 +15,7 @@
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.5 Archivo,system-ui,sans-serif;overflow-x:clip}
 .wrap{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);min-height:100vh}
-.stage{position:relative;min-height:100vh;cursor:grab;user-select:none;touch-action:pan-y;overflow:hidden;background:var(--bgc);transition:background .3s}
+.stage{position:sticky;top:0;height:100vh;cursor:grab;user-select:none;touch-action:pan-y;overflow:hidden;background:var(--bgc);transition:background .3s}
 .stage:active{cursor:grabbing}
 .frame{position:absolute;inset:4% 0 2%;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14%,#000 86%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 14%,#000 86%,transparent 100%)}
 .frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 55%;pointer-events:none}
@@ -56,23 +56,21 @@ input[type=range]{width:100%;accent-color:var(--acc);height:32px}
     </div>
     <div class="tabs" id="tabs"></div>
     <input type="range" id="slider" min="0" max="35" step="1" value="0" aria-label="Rotation">
-    <div class="bgs" id="bgs" aria-label="Backdrop colour"></div>
     <div class="ctl">
-      <button id="play" aria-pressed="true">Auto-spin</button>
       <button id="front">Front</button>
       <button id="back">Back</button>
     </div>
-    <p class="fine">Photoreal 3D mockup rendered from the label artwork. Use ← → keys to turn, 1–3 to switch flavour.</p>
+    <p class="fine">Photoreal 3D mockup rendered from the label artwork. Drag the bottle to spin it, or use ← → keys, 1–3 to switch flavour.</p>
   </div>
 </div>
 <script>
 const FR={"original": ["original_00.webp", "original_01.webp", "original_02.webp", "original_03.webp", "original_04.webp", "original_05.webp", "original_06.webp", "original_07.webp", "original_08.webp", "original_09.webp", "original_10.webp", "original_11.webp", "original_12.webp", "original_13.webp", "original_14.webp", "original_15.webp", "original_16.webp", "original_17.webp", "original_18.webp", "original_19.webp", "original_20.webp", "original_21.webp", "original_22.webp", "original_23.webp"], "mild": ["mild_00.webp", "mild_01.webp", "mild_02.webp", "mild_03.webp", "mild_04.webp", "mild_05.webp", "mild_06.webp", "mild_07.webp", "mild_08.webp", "mild_09.webp", "mild_10.webp", "mild_11.webp", "mild_12.webp", "mild_13.webp", "mild_14.webp", "mild_15.webp", "mild_16.webp", "mild_17.webp", "mild_18.webp", "mild_19.webp", "mild_20.webp", "mild_21.webp", "mild_22.webp", "mild_23.webp"], "extrahot": ["extrahot_00.webp", "extrahot_01.webp", "extrahot_02.webp", "extrahot_03.webp", "extrahot_04.webp", "extrahot_05.webp", "extrahot_06.webp", "extrahot_07.webp", "extrahot_08.webp", "extrahot_09.webp", "extrahot_10.webp", "extrahot_11.webp", "extrahot_12.webp", "extrahot_13.webp", "extrahot_14.webp", "extrahot_15.webp", "extrahot_16.webp", "extrahot_17.webp", "extrahot_18.webp", "extrahot_19.webp", "extrahot_20.webp", "extrahot_21.webp", "extrahot_22.webp", "extrahot_23.webp"]};
 {
-const FL=[{id:'original',name:'Original',col:'#ed622b',heat:2},{id:'mild',name:'Mild',col:'#e0607a',heat:1},{id:'extrahot',name:'Extra Hot',col:'#d13e36',heat:3}];
-const N=FR.original.length;let fl=0,pos=0,playing=!matchMedia('(prefers-reduced-motion: reduce)').matches,raf=0,last=0;
+const FL=[{id:'original',name:'Original',col:'#ed622b',bg:'#ed622b',heat:2},{id:'mild',name:'Mild',col:'#e0607a',bg:'#ef7b90',heat:1},{id:'extrahot',name:'Extra Hot',col:'#d13e36',bg:'#d13e36',heat:3}];
+const N=FR.original.length;let fl=0,pos=0,playing=false,raf=0,last=0;
 const A=document.getElementById('a'),slider=document.getElementById('slider');
 const tabs=document.getElementById('tabs');
-tabs.innerHTML=FL.map((f,i)=>`<button class="tab" style="--c:${f.col}" data-i="${i}" aria-pressed="false"><img src="${FR[f.id][0]}" alt="">${f.name}</button>`).join('');
+tabs.innerHTML=FL.map((f,i)=>`<button class="tab" style="--c:${f.col}" data-i="${i}" aria-pressed="false"><img src="${FR[f.id][0]}" alt="" style="background:${f.bg}">${f.name}</button>`).join('');
 function show(){
   const p=((pos%N)+N)%N,i=Math.round(p)%N,f=FL[fl].id;
   if(A.dataset.k!==f+i){A.src=FR[f][i];A.dataset.k=f+i}
@@ -81,14 +79,13 @@ function show(){
   document.getElementById('arc').setAttribute('d',deg<1?'':`M20 4 A16 16 0 ${deg>180?1:0} 1 ${x.toFixed(2)} ${y.toFixed(2)}`);
   slider.value=i;
 }
-function setFl(i){fl=i;const f=FL[i];document.documentElement.style.setProperty('--acc',f.col);
+function setFl(i){fl=i;const f=FL[i];document.documentElement.style.setProperty('--acc',f.col);document.documentElement.style.setProperty('--bgc',f.bg);
   document.getElementById('name').textContent=f.name;
   document.getElementById('heat').innerHTML=[0,1,2].map(k=>`<i class="${k<f.heat?'on':''}"></i>`).join('');
   tabs.querySelectorAll('.tab').forEach((b,k)=>b.setAttribute('aria-pressed',String(k===i)));A.dataset.k='';show()}
 function loop(ts){if(!last)last=ts;const dt=(ts-last)/1000;last=ts;if(playing){pos+=dt*N/7;show()}raf=requestAnimationFrame(loop)}
-function setPlay(v){playing=v;document.getElementById('play').setAttribute('aria-pressed',String(v))}
+function setPlay(v){playing=false}
 tabs.addEventListener('click',e=>{const b=e.target.closest('.tab');if(b)setFl(+b.dataset.i)});
-document.getElementById('play').onclick=()=>setPlay(!playing);
 document.getElementById('front').onclick=()=>{setPlay(false);pos=0;show()};
 document.getElementById('back').onclick=()=>{setPlay(false);pos=N/2;show()};
 slider.oninput=()=>{setPlay(false);pos=+slider.value;show()};
@@ -99,9 +96,6 @@ const end=()=>{if(drag){drag=null;pos=Math.round(pos);show()}};
 st.addEventListener('pointerup',end);st.addEventListener('pointercancel',end);
 addEventListener('keydown',e=>{if(e.key==='ArrowRight'){setPlay(false);pos=Math.round(pos)+1;show()}if(e.key==='ArrowLeft'){setPlay(false);pos=Math.round(pos)-1;show()}
   if(['1','2','3'].includes(e.key))setFl(+e.key-1)});
-const BG=[['Marigold','#f5b21b'],['Cream','#fdf5e0'],['Teal','#1f6f6b'],['Ink','#1f120e'],['Sky','#9fd3e6']];
-const bgs=document.getElementById('bgs');bgs.innerHTML='<span>Backdrop</span>'+BG.map((b,i)=>`<button style="--c:${b[1]}" data-i="${i}" title="${b[0]}" aria-label="${b[0]} backdrop" aria-pressed="${i===0}"></button>`).join('');
-bgs.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.documentElement.style.setProperty('--bgc',BG[+b.dataset.i][1]);bgs.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});
 // preload
 const keep=[];Object.values(FR).flat().forEach(s=>{const im=new Image();im.decoding='sync';im.src=s;keep.push(im)});slider.max=N-1;
 setFl(0);setPlay(playing);raf=requestAnimationFrame(loop);
