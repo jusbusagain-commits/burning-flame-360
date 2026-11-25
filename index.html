@@ -38,7 +38,7 @@ h1{font:italic 900 clamp(34px,5vw,52px)/1.02 Archivo,sans-serif;margin:0;color:v
 .ctl button[aria-pressed=true]{background:var(--ink);color:var(--cream)}
 input[type=range]{width:100%;accent-color:var(--acc);height:32px}
 .bgs{display:flex;gap:10px;align-items:center;font-size:13px;font-weight:700}.bgs button{width:44px;height:44px;border-radius:50%;border:2px solid rgba(31,18,14,.25);cursor:pointer;background:var(--c)}.bgs button[aria-pressed=true]{outline:3px solid var(--ink);outline-offset:2px}.fine{font-size:13px;opacity:.65;margin:0}
-@media(max-width:820px){.wrap{grid-template-columns:1fr}.stage{min-height:0;aspect-ratio:4/5;max-height:72vh;width:100%}.side{max-width:620px;padding-top:8px;justify-content:flex-start}.logo{display:none}}
+@media(max-width:820px){.wrap{grid-template-columns:1fr}.stage{position:relative;height:auto;min-height:0;aspect-ratio:4/5;max-height:72vh;width:100%}.side{max-width:620px;padding-top:8px;justify-content:flex-start}.logo{display:none}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -90,10 +90,13 @@ document.getElementById('front').onclick=()=>{setPlay(false);pos=0;show()};
 document.getElementById('back').onclick=()=>{setPlay(false);pos=N/2;show()};
 slider.oninput=()=>{setPlay(false);pos=+slider.value;show()};
 const st=document.getElementById('stage');let drag=null;
-st.addEventListener('pointerdown',e=>{drag={x:e.clientX,p:pos};setPlay(false);st.setPointerCapture(e.pointerId)});
-st.addEventListener('pointermove',e=>{if(!drag)return;pos=drag.p+(e.clientX-drag.x)/Math.max(st.clientWidth,300)*N*1.2;show()});
+st.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,p:pos,id:e.pointerId,axis:null}});
+st.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+  if(!drag.axis){if(Math.abs(dx)<8&&Math.abs(dy)<8)return;drag.axis=Math.abs(dx)>Math.abs(dy)?'x':'y';if(drag.axis==='x'){try{st.setPointerCapture(drag.id)}catch(_){}}}
+  if(drag.axis!=='x')return;e.preventDefault();pos=drag.p+dx/Math.max(st.clientWidth,300)*N*1.2;show()});
 const end=()=>{if(drag){drag=null;pos=Math.round(pos);show()}};
 st.addEventListener('pointerup',end);st.addEventListener('pointercancel',end);
+st.addEventListener('touchmove',e=>{if(drag&&drag.axis==='x')e.preventDefault()},{passive:false});
 addEventListener('keydown',e=>{if(e.key==='ArrowRight'){setPlay(false);pos=Math.round(pos)+1;show()}if(e.key==='ArrowLeft'){setPlay(false);pos=Math.round(pos)-1;show()}
   if(['1','2','3'].includes(e.key))setFl(+e.key-1)});
 // preload
